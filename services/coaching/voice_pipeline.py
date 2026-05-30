@@ -1,5 +1,7 @@
 import time
 import streamlit as st
+import base64
+import streamlit.components.v1 as components
 
 
 class VoicePipeline:
@@ -89,6 +91,14 @@ def autoplay_audio(audio_bytes):
     if not audio_bytes:
         return
     
-    st.markdown("<style>[data-testid='stAudio'] {display: none;}</style>", unsafe_allow_html=True)
-    
-    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+    b64 = base64.b64encode(audio_bytes).decode("utf-8")
+    html_code = f"""
+        <script>
+            if (window.parent.currentGymCoachAudio) {{
+                window.parent.currentGymCoachAudio.pause();
+            }}
+            window.parent.currentGymCoachAudio = new (window.parent.Audio || window.Audio)("data:audio/mp3;base64,{b64}");
+            window.parent.currentGymCoachAudio.play().catch(e => console.error("Audio playback failed:", e));
+        </script>
+    """
+    components.html(html_code, height=0)

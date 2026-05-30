@@ -2,19 +2,16 @@ import streamlit as st
 import os
 import time
 import pandas as pd
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
-from services.ui.style_loader import load_css, inject_local_font, inject_webrtc_styles
-from services.persistence.exercise_repository import init_db
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
-from services.vision.exercise_video_processor import VideoProcessorClass
-from services.tracking.metrics import sync_metrics_update
-from services.persistence.exercise_repository import get_users_exercises
-from groq import Groq
-from services.coaching.llm import LLMCoach
-from services.coaching.tts import TextToSpeech
-from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
+from services.ui.style_loader import load_css, inject_local_font
+from services.persistence.exercise_repository import init_db, get_users_exercises
 
   
 def main():
@@ -42,6 +39,11 @@ def main():
             if not api_key and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
                 api_key = st.secrets["GROQ_API_KEY"]
             
+            from groq import Groq
+            from services.coaching.llm import LLMCoach
+            from services.coaching.tts import TextToSpeech
+            from services.coaching.voice_pipeline import VoicePipeline
+
             groq_client = Groq(api_key=api_key)
             llm_coach = LLMCoach(groq_client)
             tts = TextToSpeech()
@@ -169,7 +171,9 @@ def main():
     st.markdown("#### Real-time pose detection with proactive AI voice coaching")
  
     if st.session_state.get("audio_to_play"):
+        from services.coaching.voice_pipeline import autoplay_audio
         autoplay_audio(st.session_state.audio_to_play)
+        st.session_state.audio_to_play = None
 
     if st.session_state.get("coach_feedback"):
         st.markdown("")
@@ -197,6 +201,11 @@ def main():
             unsafe_allow_html=True,
         )
     else:
+        from streamlit_webrtc import webrtc_streamer, WebRtcMode
+        from services.vision.exercise_video_processor import VideoProcessorClass
+        from services.tracking.metrics import sync_metrics_update
+        from services.ui.style_loader import inject_webrtc_styles
+
         context = webrtc_streamer(
             key="exercise-analysis",
             mode=WebRtcMode.SENDRECV,
